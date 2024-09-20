@@ -1,0 +1,54 @@
+local lplr = game.Players.LocalPlayer
+local camera = game:GetService("Workspace").CurrentCamera
+
+_G.TeamCheck = false -- Toggle TeamCheck to True or False
+
+-- Function to create a distance label
+local function CreateDistanceLabel()
+    local DistanceLabel = Drawing.new("Text")
+    DistanceLabel.Color = Color3.new(1, 1, 1)
+    DistanceLabel.Size = 14
+    DistanceLabel.Transparency = 1
+    DistanceLabel.Visible = false
+    return DistanceLabel
+end
+
+-- Function to update distance label
+local function UpdateDistanceLabel(v, DistanceLabel)
+    game:GetService("RunService").RenderStepped:Connect(function()
+        if v.Character and v.Character:FindFirstChild("Humanoid") and v.Character:FindFirstChild("HumanoidRootPart") and v ~= lplr and v.Character.Humanoid.Health > 0 then
+            local distance = (lplr.Character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).magnitude
+            local Vector, onScreen = camera:worldToViewportPoint(v.Character.HumanoidRootPart.Position)
+
+            if onScreen then
+                DistanceLabel.Text = string.format("%.0f studs", distance)
+                DistanceLabel.Position = Vector2.new(Vector.X, Vector.Y - 20) -- Adjust position above the player
+                DistanceLabel.Visible = true
+
+                if v.TeamColor == lplr.TeamColor and _G.TeamCheck then
+                    DistanceLabel.Visible = false
+                end
+            else
+                DistanceLabel.Visible = false
+            end
+        else
+            DistanceLabel.Visible = false
+        end
+    end)
+end
+
+-- Create distance labels for existing players
+for _, v in pairs(game.Players:GetPlayers()) do
+    if v ~= lplr then
+        local DistanceLabel = CreateDistanceLabel()
+        coroutine.wrap(function() UpdateDistanceLabel(v, DistanceLabel) end)()
+    end
+end
+
+-- Handle new players
+game.Players.PlayerAdded:Connect(function(v)
+    if v ~= lplr then
+        local DistanceLabel = CreateDistanceLabel()
+        coroutine.wrap(function() UpdateDistanceLabel(v, DistanceLabel) end)()
+    end
+end)
